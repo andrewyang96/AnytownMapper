@@ -8,8 +8,8 @@ from flask import request
 import sqlite3
 
 from anytownlib.kavrayskiy import make_global_level_image
-from anytownlib.maps import retrieve_continent_level_image
-from anytownlib.maps import retrieve_regional_level_image
+from anytownlib.maps import retrieve_continent_level_image_url
+from anytownlib.maps import retrieve_regional_level_image_url
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
@@ -52,8 +52,8 @@ def get_coords():
     api_key = get_google_maps_api_key()
     return render_template(
         'test_maps.html',
-        regional=retrieve_regional_level_image((lat, lng), api_key),
-        continent=retrieve_continent_level_image((lat, lng), api_key),
+        regional=retrieve_regional_level_image_url((lat, lng), api_key),
+        continent=retrieve_continent_level_image_url((lat, lng), api_key),
         global_=make_global_level_image((lat, lng)))
 
 
