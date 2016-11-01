@@ -1,7 +1,11 @@
 """Functions that produce a Kavrayskiy VII projection map."""
 
+import base64
+import cStringIO
 import math
-from PIL import Image, ImageDraw
+import os
+from PIL import Image
+from PIL import ImageDraw
 
 
 def coords_to_kavrayskiy(coords):
@@ -32,8 +36,13 @@ def draw_red_dot_on_map(im, coords, color='red', radius=20):
                  fill=color, outline=color)
 
 
-def make_global_level_image(coords):
+def make_global_level_image(coords, resize_factor=0.05):
     """Make a global level image and put a red dot on the given geocoords."""
-    im = Image.open('kav7.png')
-    draw_red_dot_on_map(im, coords)
-    im.show()
+    im = Image.open(os.path.join(os.path.dirname(__file__), 'kav7.png'))
+    im = im.resize(map(lambda dim: int(dim * resize_factor), im.size),
+                   Image.BICUBIC)
+    draw_red_dot_on_map(im, coords, radius=2)
+
+    buffer = cStringIO.StringIO()
+    im.save(buffer, format='PNG')
+    return 'data:image/png;base64,' + base64.b64encode(buffer.getvalue())
