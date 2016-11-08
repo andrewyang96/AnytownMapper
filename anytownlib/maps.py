@@ -7,7 +7,7 @@ from PIL import Image
 
 def _retrieve_google_maps_image_url(coords, zoom_level, api_key):
     lat, lng = coords
-    width, height = 400, 300
+    width, height = 480, 360
     marker_color = 'ff0000'
     return (
         'http://maps.googleapis.com/maps/api/staticmap?center={0},{1}&zoom={2}'
