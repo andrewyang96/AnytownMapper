@@ -5,6 +5,7 @@ from flask import g
 from flask import render_template
 from flask import request
 from flask import send_file
+from flask import url_for
 
 import cStringIO
 import sqlite3
@@ -35,7 +36,9 @@ def get_google_maps_api_key():
 @app.route('/', methods=['GET'])
 def index():
     """Index handler."""
-    return 'Anytown Mapper'
+    return render_template(
+        'index.html', stylesheet_href=url_for('static', filename='style.css'),
+        script_src=url_for('static', filename='script.js'))
 
 
 @app.route('/coords', methods=['GET'])
