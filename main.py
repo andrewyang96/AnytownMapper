@@ -4,12 +4,12 @@ from flask import Flask
 from flask import g
 from flask import render_template
 from flask import request
+from flask import send_file
 
+import cStringIO
 import sqlite3
 
-from anytownlib.kavrayskiy import make_global_level_image
-from anytownlib.maps import retrieve_continent_level_image_url
-from anytownlib.maps import retrieve_regional_level_image_url
+from anytownlib.mapmaker import make_image
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
@@ -50,11 +50,12 @@ def get_coords():
     except ValueError:
         return 'lng paramenter is invalid or not present', 400
     api_key = get_google_maps_api_key()
-    return render_template(
-        'test_maps.html',
-        regional=retrieve_regional_level_image_url((lat, lng), api_key),
-        continent=retrieve_continent_level_image_url((lat, lng), api_key),
-        global_=make_global_level_image((lat, lng)))
+    coords = (lat, lng)
+    im = make_image('Test City', coords, api_key)
+    buffer = cStringIO.StringIO()
+    im.save(buffer, 'PNG')
+    buffer.seek(0)
+    return send_file(buffer, mimetype='image/png')
 
 
 if __name__ == '__main__':
