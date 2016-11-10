@@ -38,7 +38,8 @@ def index():
     """Index handler."""
     return render_template(
         'index.html', stylesheet_href=url_for('static', filename='style.css'),
-        script_src=url_for('static', filename='script.js'))
+        script_src=url_for('static', filename='script.js'),
+        api_key=get_google_maps_api_key())
 
 
 @app.route('/coords', methods=['GET'])

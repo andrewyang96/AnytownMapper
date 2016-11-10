@@ -7,6 +7,12 @@
   <body>
     <h1>Anytown Mapper</h1>
 
+    <input id="citySelectorField" placeholder="Enter a city" onFocus="geolocate()" type="text" />
+    <p>Locality: <span id="locality"></span></p>
+    <p>Region: <span id="administrative_area_level_1"></span></p>
+    <p>Country: <span id="country"></span></p>
+
     <script src="{{ script_src }}"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
   </body>
 </html>
