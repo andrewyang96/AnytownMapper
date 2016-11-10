@@ -11,6 +11,7 @@ import cStringIO
 import sqlite3
 
 from anytownlib.mapmaker import make_image
+from anytownlib.maps import geocode_coords
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
@@ -40,6 +41,32 @@ def index():
         'index.html', stylesheet_href=url_for('static', filename='style.css'),
         script_src=url_for('static', filename='script.js'),
         api_key=get_google_maps_api_key())
+
+
+@app.route('/map', methods=['GET'])
+def get_map():
+    """Map generator handler given city, region, country_name, country_code."""
+    city = request.args.get('city').strip() or ''
+    if len(city) == 0:
+        return 'city parameter is not present', 400
+    region = request.args.get('region').strip() or ''
+    if len(region) == 0:
+        return 'region parameter is not present', 400
+    country_name = request.args.get('country_name').strip() or ''
+    if len(country_name) == 0:
+        return 'country_name parameter is not present', 400
+    country_code = request.args.get('country_code').strip() or ''
+    if len(country_code) == 0:
+        return 'country_code parameter is not present', 400
+    search_query = ' '.join((city, region, country_code))
+    api_key = get_google_maps_api_key()
+    coords, place_id = geocode_coords(search_query, api_key)
+
+    im = make_image(city, coords, api_key)
+    buffer = cStringIO.StringIO()
+    im.save(buffer, 'PNG')
+    buffer.seek(0)
+    return send_file(buffer, mimetype='image/png')
 
 
 @app.route('/coords', methods=['GET'])

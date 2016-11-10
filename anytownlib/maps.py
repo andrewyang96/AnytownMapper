@@ -1,8 +1,10 @@
 """Functions to retrieve images for the maps."""
 
 import cStringIO
+import json
 import requests
 from PIL import Image
+import urllib
 
 
 def _retrieve_google_maps_image_url(coords, zoom_level, api_key):
@@ -32,3 +34,16 @@ def get_continent_level_image(coords, api_key):
 def get_regional_level_image(coords, api_key):
     """Get the Google Maps image for the regional zoom-level map."""
     return _get_image(coords, 7, api_key)
+
+
+def geocode_coords(address, api_key):
+    """Return a tuple of (coordinates, place_id) for a constructed address."""
+    url = ('https://maps.googleapis.com/maps/api/geocode/json?'
+           'address={0}&key={1}').format(urllib.quote_plus(address), api_key)
+    r = requests.get(url)
+    results = json.loads(r.text).get('results')
+    try:
+        location = results[0]['geometry']['location']
+        return (location['lat'], location['lng']), results[0]['place_id']
+    except KeyError:
+        return None

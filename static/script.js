@@ -2,7 +2,7 @@ var placeSearch, autocomplete;
 var componentForm = {
   locality: 'long_name',
   administrative_area_level_1: 'long_name',
-  country: 'short_name',
+  country: 'long_name',
 };
 
 function initAutocomplete() {
@@ -28,13 +28,23 @@ function fillInCity() {
 
   // Get each component of the city from the place details
   // and fill the corresponding field on the form.
+  var components = {}
   for (var i = 0; i < place.address_components.length; i++) {
     var addressType = place.address_components[i].types[0];
     if (componentForm[addressType]) {
       var val = place.address_components[i][componentForm[addressType]];
-      document.getElementById(addressType).textContent = val;
+      document.getElementById(addressType).value = val;
+      components[addressType] = val;
+      if (addressType === 'country') {
+        var country_code = place.address_components[i]['short_name']
+        document.getElementById('country_code').value = country_code;
+        components.country_code = country_code;
+      }
     }
   }
+
+  var locationIndicatorText = components.locality + ', ' + components.administrative_area_level_1 + ', ' + components.country;
+  document.getElementById('locationIndicator').textContent = locationIndicatorText;
 }
 
 // Bias the autocomplete object to the user's geographical location,
@@ -54,3 +64,20 @@ function geolocate() {
     });
   }
 }
+
+document.getElementById('mapGeneratorForm').onsubmit = function (e) {
+  var city = e.target.querySelector('input[name=city]').value;
+  var region = e.target.querySelector('input[name=region]').value;
+  var country_name = e.target.querySelector('input[name=country_name]').value;
+  var country_code = e.target.querySelector('input[name=country_code]').value;
+  if (!city || !region || !country_name || !country_code) {
+    return false;
+  }
+
+  var params = 'city=' + encodeURIComponent(city) + '&region=' + encodeURIComponent(region) + '&country_name=' + encodeURIComponent(country_name) + '&country_code=' + encodeURIComponent(country_code);
+  var img = document.createElement('img');
+  img.src = '/map?' + params;
+  document.getElementById('generatedImage').innerHTML = '';
+  document.getElementById('generatedImage').appendChild(img);
+  return false;
+};
