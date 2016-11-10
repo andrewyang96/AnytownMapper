@@ -38,6 +38,7 @@ def get_regional_level_image(coords, api_key):
 
 def geocode_coords(address, api_key):
     """Return a tuple of (coordinates, place_id) for a constructed address."""
+    address = unicode(address).encode('utf-8')
     url = ('https://maps.googleapis.com/maps/api/geocode/json?'
            'address={0}&key={1}').format(urllib.quote_plus(address), api_key)
     r = requests.get(url)
