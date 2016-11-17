@@ -43,10 +43,10 @@ def get_google_maps_api_key():
 def get_facebook_client_id_and_secret():
     """Get Facebook client ID and client secret."""
     cur = get_db().cursor()
-    stmt = 'SELECT api_key FROM credentials WHERE provider="{0}"'
-    client_id = cur.execute(stmt.format('facebook_client_id')).fetchone()[0]
+    stmt = 'SELECT api_key FROM credentials WHERE provider=?'
+    client_id = cur.execute(stmt, ('facebook_client_id', )).fetchone()[0]
     client_secret = cur.execute(
-        stmt.format('facebook_client_secret')).fetchone()[0]
+        stmt, ('facebook_client_secret', )).fetchone()[0]
     return client_id, client_secret
 
 
