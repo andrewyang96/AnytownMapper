@@ -129,6 +129,9 @@ def get_map():
     buffer = cStringIO.StringIO()
     im.save(buffer, 'PNG')
     buffer.seek(0)
+
+    # TODO: update location history
+
     return send_file(buffer, mimetype='image/png')
 
 
