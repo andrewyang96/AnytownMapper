@@ -50,6 +50,28 @@ def get_facebook_client_id_and_secret():
     return client_id, client_secret
 
 
+def update_user(user_id, name, email):
+    """Upsert user row in the database."""
+    db = get_db()
+    cur = db.cursor()
+    existing_user = cur.execute(
+        'SELECT * FROM users WHERE user_id=?', (user_id, )).fetchone()
+    if existing_user is None:
+        # user doesn't exist: insert
+        cur.execute(
+            'INSERT INTO users (user_id, name, email) VALUES (?, ?, ?)',
+            (user_id, name, email))
+        db.commit()
+    else:
+        # user exists: update
+        old_user_id, old_name, old_email = existing_user
+        if old_name != name or old_email != email:
+            cur.execute(
+                'UPDATE users SET name=?, email=? WHERE user_id=?',
+                (name, email, user_id))
+            db.commit()
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Index handler."""
@@ -91,7 +113,7 @@ def login():
     """Login handler that initiates Facebook OAuth2 flow."""
     client_id, client_secret = get_facebook_client_id_and_secret()
     redirect_uri = ('https://www.facebook.com/v2.8/dialog/oauth?client_id={0}'
-                    '&display=popup&redirect_uri={1}'.format(
+                    '&display=popup&scope=email&redirect_uri={1}'.format(
                         client_id, urllib.quote_plus(
                             request.url_root + 'login/callback')))
     return redirect(redirect_uri)
@@ -108,6 +130,7 @@ def login_callback():
     if code is None:
         flash('Error in logging in')
         return redirect('/')
+
     client_id, client_secret = get_facebook_client_id_and_secret()
     exchange_url = ('https://graph.facebook.com/v2.8/oauth/access_token'
                     '?client_id={0}&redirect_uri={1}'
@@ -119,9 +142,11 @@ def login_callback():
     exchange_response = exchange_request.json()
     session['access_token'] = exchange_response['access_token']
     graph = facebook.GraphAPI(access_token=exchange_response['access_token'])
-    user_profile = graph.get_object('me')
+    user_profile = graph.get_object('me', fields='name,email')
     session['name'] = user_profile['name']
-    # TODO: upsert into db
+
+    update_user(
+        user_profile['id'], user_profile['name'], user_profile['email'])
     return redirect('/')
 
 
