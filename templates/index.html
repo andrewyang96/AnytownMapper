@@ -13,6 +13,8 @@
       {% include 'map_generator_area.html' %}
     </div>
 
+    <script src="{{ script_src }}"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&libraries=places&callback=initAutocomplete" async defer></script>
     {% include 'javascripts.html' %}
   </body>
 </html>

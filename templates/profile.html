@@ -1,0 +1,16 @@
+<html>
+  <head>
+    {% include 'head.html' %}
+  </head>
+  <body>
+    {% include 'facebook_sdk.html' %}
+
+    {% include 'header.html' %}
+
+    <h1>{{ user_profile['name'] }}</h1>
+
+    <p>Email: {{ user_profile['email'] }}</p>
+
+    {% include 'javascripts.html' %}
+  </body>
+</html>

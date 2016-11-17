@@ -50,6 +50,17 @@ def get_facebook_client_id_and_secret():
     return client_id, client_secret
 
 
+def get_user_info(user_id):
+    """Fetch user info from database."""
+    cur = get_db().cursor()
+    user_info = cur.execute(
+        'SELECT * FROM users WHERE user_id=?', (user_id, )).fetchone()
+    column_names = tuple(description[0] for description in cur.description)
+    if user_info is None:
+        return None
+    return dict(zip(column_names, user_info))
+
+
 def update_user(user_id, name, email):
     """Upsert user row in the database."""
     db = get_db()
@@ -76,10 +87,23 @@ def update_user(user_id, name, email):
 def index():
     """Index handler."""
     name = session.get('name')
+    user_id = session.get('user_id')
     return render_template(
         'index.html', stylesheet_href=url_for('static', filename='style.css'),
         script_src=url_for('static', filename='script.js'),
-        api_key=get_google_maps_api_key(), name=name)
+        api_key=get_google_maps_api_key(), name=name, user_id=user_id)
+
+
+@app.route('/user/<int:user_id>', methods=['GET'])
+def user_profile(user_id):
+    """User profile handler."""
+    user_profile = get_user_info(user_id)
+    if user_profile is None:
+        return 'User does not exist', 404
+    return render_template(
+        'profile.html',
+        stylesheet_href=url_for('static', filename='style.css'),
+        user_profile=user_profile)
 
 
 @app.route('/map', methods=['GET'])
@@ -144,6 +168,7 @@ def login_callback():
     graph = facebook.GraphAPI(access_token=exchange_response['access_token'])
     user_profile = graph.get_object('me', fields='name,email')
     session['name'] = user_profile['name']
+    session['user_id'] = user_profile['id']
 
     update_user(
         user_profile['id'], user_profile['name'], user_profile['email'])
@@ -155,6 +180,7 @@ def logout():
     """Logout callback handler."""
     session.pop('access_token', None)
     session.pop('name', None)
+    session.pop('user_id', None)
     return redirect('/')
 
 
