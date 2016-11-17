@@ -77,7 +77,22 @@ document.getElementById('mapGeneratorForm').onsubmit = function (e) {
   var params = 'city=' + encodeURIComponent(city) + '&region=' + encodeURIComponent(region) + '&country_name=' + encodeURIComponent(country_name) + '&country_code=' + encodeURIComponent(country_code);
   var img = document.createElement('img');
   img.src = '/map?' + params;
+  img.onload = function () {
+    document.getElementById('generatedImage').innerHTML = '';
+    document.getElementById('generatedImage').appendChild(img);
+  };
+
+  var loading_font_size = '64px';
   document.getElementById('generatedImage').innerHTML = '';
-  document.getElementById('generatedImage').appendChild(img);
+  var spinner = document.createElement('i');
+  spinner.classList.add('fa');
+  spinner.classList.add('fa-spinner');
+  spinner.classList.add('fa-spin');
+  spinner.style['font-size'] = loading_font_size;
+  document.getElementById('generatedImage').appendChild(spinner);
+  var loading_text = document.createElement('p');
+  loading_text.textContent = 'Loading...';
+  loading_text.style['font-size'] = loading_font_size;
+  document.getElementById('generatedImage').appendChild(loading_text);
   return false;
 };

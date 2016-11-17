@@ -1,0 +1,11 @@
+<form id="mapGeneratorForm">
+  <input id="citySelectorField" placeholder="Enter a city" onFocus="geolocate()" type="text" />
+  <input id="locality" type="hidden" name="city" />
+  <input id="administrative_area_level_1" type="hidden" name="region" />
+  <input id="country" type="hidden" name="country_name" />
+  <input id="country_code" type="hidden" name="country_code" />
+  <input type="submit"></button>
+  <p id="locationIndicator"></p>
+</form>
+
+<div id="generatedImage"></div>
