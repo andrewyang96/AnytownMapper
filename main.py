@@ -83,6 +83,17 @@ def update_user(user_id, name, email):
             db.commit()
 
 
+def update_map_cache(
+        place_id, coords, city, region, country_name, country_code):
+    """Upsert map cache row in the database."""
+    lat, lng = coords
+
+
+def update_user_location_history(user_id, place_id):
+    """Insert new location history entry for a given user."""
+    pass
+
+
 @app.route('/', methods=['GET'])
 def index():
     """Index handler."""
@@ -130,7 +141,11 @@ def get_map():
     im.save(buffer, 'PNG')
     buffer.seek(0)
 
-    # TODO: update location history
+    update_map_cache(
+        place_id, coords, city, region, country_name, country_code)
+    user_id = session.get('user_id')
+    if user_id:
+        update_user_location_history(user_id, place_id)
 
     return send_file(buffer, mimetype='image/png')
 
