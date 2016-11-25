@@ -16,8 +16,12 @@ import requests
 import sqlite3
 import urllib
 
+from anytownlib.map_cache import update_map_cache
 from anytownlib.mapmaker import make_image
 from anytownlib.maps import geocode_coords
+from anytownlib.user_profiles import get_user_info
+from anytownlib.user_profiles import update_user
+from anytownlib.user_profiles import update_user_location_history
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
@@ -50,50 +54,6 @@ def get_facebook_client_id_and_secret():
     return client_id, client_secret
 
 
-def get_user_info(user_id):
-    """Fetch user info from database."""
-    cur = get_db().cursor()
-    user_info = cur.execute(
-        'SELECT * FROM users WHERE user_id=?', (user_id, )).fetchone()
-    column_names = tuple(description[0] for description in cur.description)
-    if user_info is None:
-        return None
-    return dict(zip(column_names, user_info))
-
-
-def update_user(user_id, name, email):
-    """Upsert user row in the database."""
-    db = get_db()
-    cur = db.cursor()
-    existing_user = cur.execute(
-        'SELECT * FROM users WHERE user_id=?', (user_id, )).fetchone()
-    if existing_user is None:
-        # user doesn't exist: insert
-        cur.execute(
-            'INSERT INTO users (user_id, name, email) VALUES (?, ?, ?)',
-            (user_id, name, email))
-        db.commit()
-    else:
-        # user exists: update
-        old_user_id, old_name, old_email = existing_user
-        if old_name != name or old_email != email:
-            cur.execute(
-                'UPDATE users SET name=?, email=? WHERE user_id=?',
-                (name, email, user_id))
-            db.commit()
-
-
-def update_map_cache(
-        place_id, coords, city, region, country_name, country_code):
-    """Upsert map cache row in the database."""
-    lat, lng = coords
-
-
-def update_user_location_history(user_id, place_id):
-    """Insert new location history entry for a given user."""
-    pass
-
-
 @app.route('/', methods=['GET'])
 def index():
     """Index handler."""
@@ -108,7 +68,7 @@ def index():
 @app.route('/user/<int:user_id>', methods=['GET'])
 def user_profile(user_id):
     """User profile handler."""
-    user_profile = get_user_info(user_id)
+    user_profile = get_user_info(get_db(), user_id)
     if user_profile is None:
         return 'User does not exist', 404
     return render_template(
@@ -142,10 +102,10 @@ def get_map():
     buffer.seek(0)
 
     update_map_cache(
-        place_id, coords, city, region, country_name, country_code)
+        get_db(), place_id, coords, city, region, country_name, country_code)
     user_id = session.get('user_id')
     if user_id:
-        update_user_location_history(user_id, place_id)
+        update_user_location_history(get_db(), user_id, place_id)
 
     return send_file(buffer, mimetype='image/png')
 
@@ -170,7 +130,7 @@ def login_callback():
         return redirect('/')
     code = request.args.get('code')
     if code is None:
-        flash('Error in logging in')
+        flash('Error logging in. Please try again.')
         return redirect('/')
 
     client_id, client_secret = get_facebook_client_id_and_secret()
@@ -189,7 +149,8 @@ def login_callback():
     session['user_id'] = user_profile['id']
 
     update_user(
-        user_profile['id'], user_profile['name'], user_profile['email'])
+        get_db(), user_profile['id'], user_profile['name'],
+        user_profile['email'])
     return redirect('/')
 
 
