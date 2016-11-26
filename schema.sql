@@ -4,13 +4,13 @@ CREATE TABLE credentials(
 );
 
 CREATE TABLE users(
-    user_id     INT PRIMARY KEY NOT NULL,
+    user_id     INT PRIMARY KEY UNIQUE NOT NULL,
     name        TEXT NOT NULL,
     email       TEXT NOT NULL
 );
 
 CREATE TABLE map_cache(
-    place_id        TEXT PRIMARY KEY NOT NULL,
+    place_id        TEXT PRIMARY KEY UNIQUE NOT NULL,
     lat             REAL NOT NULL,
     lng             REAL NOT NULL,
     city            TEXT NOT NULL,

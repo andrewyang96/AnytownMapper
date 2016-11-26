@@ -27,6 +27,14 @@ app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
 
 
+def init_db():
+    """Initialize database with schema."""
+    db = get_db()
+    with app.open_resource('schema.sql', mode='r') as f:
+        db.cursor().executescript(f.read())
+    db.commit()
+
+
 def get_db():
     """Get database object."""
     db = getattr(g, '_database', None)
