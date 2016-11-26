@@ -3,6 +3,7 @@
 import math
 import os
 import unittest
+import sqlite3
 import tempfile
 
 from main import app
@@ -14,6 +15,10 @@ from anytownlib.kavrayskiy import make_global_level_image
 from anytownlib.map_cache import fetch_from_map_cache
 from anytownlib.map_cache import insert_into_map_cache
 from anytownlib.map_cache import update_map_cache
+from anytownlib.mapmaker import format_coords
+from anytownlib.user_profiles import get_user_info
+from anytownlib.user_profiles import update_user
+from anytownlib.user_profiles import update_user_location_history
 
 
 class TestAnytownLibKavrayskiy(unittest.TestCase):
@@ -58,8 +63,8 @@ class TestAnytownLibKavrayskiy(unittest.TestCase):
         ), (255, 0, 0, 255))
 
 
-class TestAnytownLibMapCache(unittest.TestCase):
-    """Test anytownlib map_cache functions."""
+class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
+    """Test anytownlib map_cache and user_profiles functions."""
 
     def setUp(self):
         """Setup method."""
@@ -87,14 +92,31 @@ class TestAnytownLibMapCache(unittest.TestCase):
             'country_code': u'CA'
         }
 
+        self.user1 = {
+            'user_id': '1',
+            'name': 'Al Bert',
+            'email': 'albert@big.al'
+        }
+        self.user2 = {
+            'user_id': '2',
+            'name': 'Can Dee',
+            'email': 'ilove@candee.ee'
+        }
+
     def tearDown(self):
         """Teardown method."""
         os.close(self.db_fd)
         os.unlink(app.config['DATABASE'])
 
-    def test_map_cache_functions(self):
-        """Test the fetch, insert, update methods in the map_cache module."""
+    def test_functions(self):
+        """Test functions in the map_cache and user_profiles modules.
+
+        First test fetch, insert, update methods from map_cache.
+        Then test get_user_info, update_user, and update_user_location_history
+        from user_profiles.
+        """
         with app.app_context():
+            # START map_cache testing
             self.assertIsNone(
                 fetch_from_map_cache(get_db(), self.place1['place_id']))
             self.assertIsNone(
@@ -126,22 +148,54 @@ class TestAnytownLibMapCache(unittest.TestCase):
             self.assertIsNotNone(
                 fetch_from_map_cache(get_db(), self.place2['place_id']))
 
+            self.assertRaises(
+                sqlite3.IntegrityError,
+                lambda: insert_into_map_cache(get_db(), **self.place2))
+
+            # START user_profile testing
+            self.assertIsNone(get_user_info(get_db(), self.user1['user_id']))
+            self.assertIsNone(get_user_info(get_db(), self.user2['user_id']))
+
+            update_user(get_db(), **self.user1)
+            self.assertIsNotNone(get_user_info(get_db(), '1'))
+            self.assertIsNone(get_user_info(get_db(), '2'))
+
+            update_user_location_history(
+                get_db(), self.user1['user_id'], self.place1['place_id'])
+            self.assertRaises(
+                sqlite3.IntegrityError,
+                lambda: update_user_location_history(
+                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))  # place_id exists?
+            self.assertRaises(
+                sqlite3.IntegrityError,
+                lambda: update_user_location_history(
+                    get_db(), self.user2['user_id'], self.place1['place_id']))
+
+            update_user(get_db(), **self.user2)
+            self.assertIsNotNone(get_user_info(get_db(), '1'))
+            self.assertIsNotNone(get_user_info(get_db(), '2'))
+
+            update_user_location_history(
+                get_db(), self.user1['user_id'], self.place2['place_id'])
+            update_user_location_history(
+                get_db(), self.user2['user_id'], self.place2['place_id'])
+            self.assertRaises(
+                sqlite3.IntegrityError,
+                lambda: update_user_location_history(
+                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))
+            self.assertRaises(
+                sqlite3.IntegrityError,
+                lambda: update_user_location_history(
+                    get_db(), self.user2['user_id'], 'THIS DOESNT EXIST'))
+
 
 class TestAnytownLibMapmaker(unittest.TestCase):
     """Test anytownlib mapmaker functions."""
 
-    pass
-
-
-class TestAnytownLibMaps(unittest.TestCase):
-    """Test anytownlib maps functions."""
-
-    def setUp(self):
-        """Setup method."""
-        self.mock_api_key = 'APIKEY'
-
-
-class TestAnytownLibUserProfiles(unittest.TestCase):
-    """Test anytownlib user_profiles functions."""
-
-    pass
+    def test_format_coords(self):
+        """Test format_coords method."""
+        self.assertEquals(format_coords((0, 0)), u'0.0\u00b0 N, 0.0\u00b0 E')
+        self.assertEquals(format_coords(
+            (44.9, -93.5)), u'44.9\u00b0 N, 93.5\u00b0 W')
+        self.assertEquals(format_coords(
+            (-37.8, 145)), u'37.8\u00b0 S, 145.0\u00b0 E')
