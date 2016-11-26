@@ -20,8 +20,7 @@ def coords_to_kavrayskiy(coords):
     return (x, y)
 
 
-def draw_red_dot_on_map(im, coords, color='red', radius=20):
-    """Draw a red dot at the given geographical coordinates on the image."""
+def _draw_red_dot_on_map(im, coords, color='red', radius=20):
     width, height = im.size
     x, y = coords_to_kavrayskiy(coords)
     x = (x / (math.sqrt(3) * math.pi)) + 0.5
@@ -39,5 +38,5 @@ def make_global_level_image(coords, resize_factor=0.05):
     im = Image.open(os.path.join(os.path.dirname(__file__), 'kav7.png'))
     im = im.resize(map(lambda dim: int(dim * resize_factor), im.size),
                    Image.BICUBIC)
-    draw_red_dot_on_map(im, coords, radius=2)
+    _draw_red_dot_on_map(im, coords, radius=2)
     return im
