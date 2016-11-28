@@ -17,6 +17,7 @@ from anytownlib.map_cache import insert_into_map_cache
 from anytownlib.map_cache import update_map_cache
 from anytownlib.mapmaker import format_coords
 from anytownlib.user_profiles import get_user_info
+from anytownlib.user_profiles import get_user_location_history
 from anytownlib.user_profiles import update_user
 from anytownlib.user_profiles import update_user_location_history
 
@@ -171,6 +172,10 @@ class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
                 lambda: update_user_location_history(
                     get_db(), self.user2['user_id'], self.place1['place_id']))
 
+            self.assertEquals(
+                len(get_user_location_history(
+                    get_db(), self.user1['user_id'], 0)), 1)
+
             update_user(get_db(), **self.user2)
             self.assertIsNotNone(get_user_info(get_db(), '1'))
             self.assertIsNotNone(get_user_info(get_db(), '2'))
@@ -187,6 +192,13 @@ class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
                     get_db(), self.user2['user_id'], 'THIS DOESNT EXIST'))
+
+            self.assertEquals(
+                len(get_user_location_history(
+                    get_db(), self.user1['user_id'], 0)), 2)
+            self.assertEquals(
+                len(get_user_location_history(
+                    get_db(), self.user2['user_id'], 0)), 1)
 
 
 class TestAnytownLibMapmaker(unittest.TestCase):

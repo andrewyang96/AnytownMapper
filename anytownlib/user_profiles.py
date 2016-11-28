@@ -9,6 +9,7 @@ def get_user_info(db, user_id):
     user_info = cur.execute(
         'SELECT * FROM users WHERE user_id=?', (user_id, )).fetchone()
     column_names = tuple(description[0] for description in cur.description)
+    cur.close()
     if user_info is None:
         return None
     return dict(zip(column_names, user_info))
@@ -33,11 +34,18 @@ def update_user(db, user_id, name, email):
                 'UPDATE users SET name=?, email=? WHERE user_id=?',
                 (name, email, user_id))
             db.commit()
+    cur.close()
 
 
-def get_user_location_history(db, user_id, place_id, since_timestamp):
+def get_user_location_history(db, user_id, since_timestamp):
     """Get user's location history after since_timestamp."""
-    pass
+    cur = db.cursor()
+    location_history = cur.execute(
+        'SELECT * FROM location_history WHERE user_id=? AND timestamp>=?',
+        (user_id, since_timestamp)).fetchall()
+    column_names = tuple(description[0] for description in cur.description)
+    cur.close()
+    return map(lambda entry: dict(zip(column_names, entry)), location_history)
 
 
 def update_user_location_history(db, user_id, place_id):
@@ -49,3 +57,4 @@ def update_user_location_history(db, user_id, place_id):
         (user_id, place_id, timestamp) VALUES (?, ?, ?)''',
         (user_id, place_id, unix_timestamp))
     db.commit()
+    cur.close()

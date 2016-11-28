@@ -14,6 +14,7 @@ def fetch_from_map_cache(db, place_id):
     map_cache_info = cur.execute(
         'SELECT * FROM map_cache WHERE place_id=?', (place_id, )).fetchone()
     column_names = tuple(description[0] for description in cur.description)
+    cur.close()
     if map_cache_info is None:
         return None
     return dict(zip(column_names, map_cache_info))
@@ -33,6 +34,7 @@ def insert_into_map_cache(
         VALUES (?, ?, ?, ?, ?, ?, ?)''',
         (place_id, lat, lng, city, region, country_name, country_code))
     db.commit()
+    cur.close()
 
 
 def update_map_cache(
@@ -45,6 +47,7 @@ def update_map_cache(
         country_name=?, country_code=? WHERE place_id=?''',
         (lat, lng, city, region, country_name, country_code, place_id))
     db.commit()
+    cur.close()
 
 
 def fetch_map_from_s3(place_id, aws_access_key_id, aws_secret_access_key):
