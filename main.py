@@ -12,6 +12,7 @@ from flask import url_for
 
 import cStringIO
 import facebook
+import os
 import requests
 import sqlite3
 import urllib
@@ -28,6 +29,8 @@ from anytownlib.user_profiles import update_user_location_history
 
 app = Flask(__name__)
 app.config['DATABASE'] = 'database.db'
+app.config['PRODUCTION'] = (True if os.environ.get('HEROKU_PROD', None)
+                            else False)
 
 
 def init_db():
@@ -48,21 +51,39 @@ def get_db():
     return db
 
 
-def get_google_maps_api_key():
+def get_google_maps_api_key(prod):
     """Get Google Maps API key."""
+    if prod:
+        return os.environ.get('GOOGLE_API_KEY', None)
     cur = get_db().cursor()
     api_key = cur.execute(
         'SELECT api_key FROM credentials WHERE provider="google"').fetchone()
     return api_key[0]
 
 
-def get_facebook_client_id_and_secret():
+def get_facebook_client_id_and_secret(prod):
     """Get Facebook client ID and client secret."""
+    if prod:
+        return (os.environ.get('FB_CLIENT_ID', None),
+                os.environ.get('FB_CLIENT_SECRET', None))
     cur = get_db().cursor()
     stmt = 'SELECT api_key FROM credentials WHERE provider=?'
     client_id = cur.execute(stmt, ('facebook_client_id', )).fetchone()[0]
     client_secret = cur.execute(
         stmt, ('facebook_client_secret', )).fetchone()[0]
+    return client_id, client_secret
+
+
+def get_amazon_client_id_and_secret(prod):
+    """Get Amazon client ID and client secret."""
+    if prod:
+        return (os.environ.get('AWS_CLIENT_ID', None),
+                os.environ.get('AWS_CLIENT_SECRET', None))
+    cur = get_db().cursor()
+    stmt = 'SELECT api_key FROM credentials WHERE provider=?'
+    client_id = cur.execute(stmt, ('amazon_client_id', )).fetchone()[0]
+    client_secret = cur.execute(
+        stmt, ('amazon_client_secret', )).fetchone()[0]
     return client_id, client_secret
 
 
@@ -74,7 +95,8 @@ def index():
     return render_template(
         'index.html', stylesheet_href=url_for('static', filename='style.css'),
         script_src=url_for('static', filename='script.js'),
-        api_key=get_google_maps_api_key(), name=name, user_id=user_id)
+        api_key=get_google_maps_api_key(app.config['PRODUCTION']),
+        name=name, user_id=user_id)
 
 
 @app.route('/user/<int:user_id>', methods=['GET'])
@@ -115,32 +137,36 @@ def get_map():
     if len(country_code) == 0:
         return 'country_code parameter is not present', 400
     search_query = ' '.join((city, region, country_code))
-    api_key = get_google_maps_api_key()
+    api_key = get_google_maps_api_key(app.config['PRODUCTION'])
     coords, place_id = geocode_coords(search_query, api_key)
 
+    aws_client_id, aws_client_secret = get_amazon_client_id_and_secret(
+        app.config['PRODUCTION'])
+
     existing_map_cache = fetch_from_map_cache(get_db(), place_id)
+    im = None
     if existing_map_cache is None:
         im = make_image(city, coords, api_key)
         insert_into_map_cache(
             get_db(), place_id, coords, city, region,
             country_name, country_code)
-        upload_map_to_s3(place_id, im)
-        stream = cStringIO.StringIO()
-        im.save(stream, 'PNG')
-        stream.seek(0)
-        return send_file(stream, mimetype='image/png')
+        upload_map_to_s3(place_id, im, aws_client_id, aws_client_secret)
     else:
-        im = fetch_map_from_s3(place_id)
-        stream = cStringIO.StringIO()
-        im.save(stream, 'PNG')
-        stream.seek(0)
-        return send_file(stream, mimetype='image/png')
+        im = fetch_map_from_s3(place_id, aws_client_id, aws_client_secret)
+    if im is None:
+        im = make_image(city, coords, api_key)
+
+    stream = cStringIO.StringIO()
+    im.save(stream, 'PNG')
+    stream.seek(0)
+    return send_file(stream, mimetype='image/png')
 
 
 @app.route('/login', methods=['GET'])
 def login():
     """Login handler that initiates Facebook OAuth2 flow."""
-    client_id, client_secret = get_facebook_client_id_and_secret()
+    client_id, client_secret = get_facebook_client_id_and_secret(
+        app.config['PRODUCTION'])
     redirect_uri = ('https://www.facebook.com/v2.8/dialog/oauth?client_id={0}'
                     '&display=popup&scope=email&redirect_uri={1}'.format(
                         client_id, urllib.quote_plus(
@@ -160,7 +186,8 @@ def login_callback():
         flash('Error logging in. Please try again.')
         return redirect('/')
 
-    client_id, client_secret = get_facebook_client_id_and_secret()
+    client_id, client_secret = get_facebook_client_id_and_secret(
+        app.config['PRODUCTION'])
     exchange_url = ('https://graph.facebook.com/v2.8/oauth/access_token'
                     '?client_id={0}&redirect_uri={1}'
                     '&client_secret={2}&code={3}'.format(
@@ -193,5 +220,6 @@ def logout():
 if __name__ == '__main__':
     with app.app_context():
         # Use facebook client ecret as app secret key
-        app.secret_key = get_facebook_client_id_and_secret()[1]
-    app.run(port=5000, debug=True)
+        app.secret_key = get_facebook_client_id_and_secret(
+            app.config['PRODUCTION'])[1]
+    app.run(port=5000)

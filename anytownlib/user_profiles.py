@@ -35,6 +35,11 @@ def update_user(db, user_id, name, email):
             db.commit()
 
 
+def get_user_location_history(db, user_id, place_id, since_timestamp):
+    """Get user's location history after since_timestamp."""
+    pass
+
+
 def update_user_location_history(db, user_id, place_id):
     """Insert new location history entry for a given user."""
     cur = db.cursor()
