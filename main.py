@@ -146,7 +146,8 @@ def get_map():
     existing_map_cache = fetch_from_map_cache(get_db(), place_id)
     im = None
     if existing_map_cache is None:
-        im = make_image(city, coords, api_key)
+        im = make_image(
+            city, region, country_name, country_code, coords, api_key)
         insert_into_map_cache(
             get_db(), place_id, coords, city, region,
             country_name, country_code)
@@ -154,7 +155,8 @@ def get_map():
     else:
         im = fetch_map_from_s3(place_id, aws_client_id, aws_client_secret)
     if im is None:
-        im = make_image(city, coords, api_key)
+        im = make_image(
+            city, region, country_name, country_code, coords, api_key)
 
     stream = cStringIO.StringIO()
     im.save(stream, 'PNG')

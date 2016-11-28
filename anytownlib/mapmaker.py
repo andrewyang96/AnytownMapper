@@ -17,7 +17,7 @@ def format_coords(coords):
     return u'{0}, {1}'.format(lat_component, lng_component)
 
 
-def make_image(city_name, coords, api_key):
+def make_image(city_name, region, country_name, country_code, coords, api_key):
     """Make the Anytown Mapper image with given city name and coords."""
     global_image = make_global_level_image(coords)  # 173x100
     continent_image = get_continent_level_image(coords, api_key)  # 400x300
@@ -39,7 +39,17 @@ def make_image(city_name, coords, api_key):
     im.paste(im=regional_image, box=(510, 130))
     draw.text((10, 10), city_name, header_color, font=header_font)
     draw.text(
-        (10, 60), format_coords(coords), subheader_color, font=subheader_font)
+        (10, 60), region, header_color, font=subheader_font)
+
+    coords_text = format_coords(coords)
+    coords_textsize = draw.textsize(coords_text, font=subheader_font)
     draw.text(
-        (800, 10), 'Made by Anytown Mapper', text_color, font=regular_font)
+        (990 - coords_textsize[0], 10), coords_text,
+        subheader_color, font=subheader_font)
+    country_name_textsize = draw.textsize(country_name, font=subheader_font)
+    draw.text(
+        (990 - country_name_textsize[0], 44), country_name,
+        subheader_color, font=subheader_font)
+    draw.text(
+        (800, 110), 'Made by Anytown Mapper', text_color, font=regular_font)
     return im
