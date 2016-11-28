@@ -16,7 +16,10 @@ import requests
 import sqlite3
 import urllib
 
-from anytownlib.map_cache import update_map_cache
+from anytownlib.map_cache import fetch_from_map_cache
+from anytownlib.map_cache import fetch_map_from_s3
+from anytownlib.map_cache import insert_into_map_cache
+from anytownlib.map_cache import upload_map_to_s3
 from anytownlib.mapmaker import make_image
 from anytownlib.maps import geocode_coords
 from anytownlib.user_profiles import get_user_info
@@ -86,6 +89,16 @@ def user_profile(user_id):
         user_profile=user_profile)
 
 
+@app.route('/user/<int:user_id>/history', methods=['POST'])
+def update_user_history(user_id):
+    """Update user history handler."""
+    place_id = request.args.get('place_id')
+    if place_id is None:
+        return 'place_id parameter is not present', 400
+    update_user_location_history(get_db(), user_id, place_id)
+    return ''
+
+
 @app.route('/map', methods=['GET'])
 def get_map():
     """Map generator handler given city, region, country_name, country_code."""
@@ -105,18 +118,23 @@ def get_map():
     api_key = get_google_maps_api_key()
     coords, place_id = geocode_coords(search_query, api_key)
 
-    im = make_image(city, coords, api_key)
-    buffer = cStringIO.StringIO()
-    im.save(buffer, 'PNG')
-    buffer.seek(0)
-
-    update_map_cache(
-        get_db(), place_id, coords, city, region, country_name, country_code)
-    user_id = session.get('user_id')
-    if user_id:
-        update_user_location_history(get_db(), user_id, place_id)
-
-    return send_file(buffer, mimetype='image/png')
+    existing_map_cache = fetch_from_map_cache(get_db(), place_id)
+    if existing_map_cache is None:
+        im = make_image(city, coords, api_key)
+        insert_into_map_cache(
+            get_db(), place_id, coords, city, region,
+            country_name, country_code)
+        upload_map_to_s3(place_id, im)
+        stream = cStringIO.StringIO()
+        im.save(stream, 'PNG')
+        stream.seek(0)
+        return send_file(stream, mimetype='image/png')
+    else:
+        im = fetch_map_from_s3(place_id)
+        stream = cStringIO.StringIO()
+        im.save(stream, 'PNG')
+        stream.seek(0)
+        return send_file(stream, mimetype='image/png')
 
 
 @app.route('/login', methods=['GET'])

@@ -1,5 +1,13 @@
 """Functions to fetch and update items from the map cache."""
 
+import cStringIO
+
+import boto3
+from PIL import Image
+
+s3 = boto3.resource('s3')
+S3_BUCKET_NAME = 'anytown-mapper'
+
 
 def fetch_from_map_cache(db, place_id):
     """Fetch map cache row from the database."""
@@ -42,9 +50,17 @@ def update_map_cache(
 
 def fetch_map_from_s3(place_id):
     """Fetch map image from AWS S3 bucket."""
-    pass
+    obj = s3.Object(S3_BUCKET_NAME, '{0}.png'.format(place_id))
+    stream = cStringIO.StringIO(obj.get()['Body'].read())
+    im = Image.open(stream)
+    return im
 
 
 def upload_map_to_s3(place_id, im):
     """Upload map image to AWS S3 bucket."""
-    pass
+    stream = cStringIO.StringIO()
+    im.save(stream, 'PNG')
+    stream.seek(0)
+    s3.Object(
+        S3_BUCKET_NAME, '{0}.png'.format(place_id)
+    ).put(Body=open(stream, 'rb'))

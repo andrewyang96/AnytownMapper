@@ -165,7 +165,7 @@ class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
-                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))  # place_id exists?
+                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
