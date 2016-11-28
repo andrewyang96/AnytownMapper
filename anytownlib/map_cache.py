@@ -63,4 +63,4 @@ def upload_map_to_s3(place_id, im):
     stream.seek(0)
     s3.Object(
         S3_BUCKET_NAME, '{0}.png'.format(place_id)
-    ).put(Body=open(stream, 'rb'))
+    ).put(Body=stream.getvalue())

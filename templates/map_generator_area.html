@@ -1,4 +1,4 @@
-<form id="mapGeneratorForm">
+<form id="mapGeneratorForm" data-userid="{{ user_id or '' }}">
   <input id="citySelectorField" placeholder="Enter a city" onFocus="geolocate()" type="text" />
   <input id="locality" type="hidden" name="city" />
   <input id="administrative_area_level_1" type="hidden" name="region" />

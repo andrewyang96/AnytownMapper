@@ -66,6 +66,7 @@ function geolocate() {
 }
 
 document.getElementById('mapGeneratorForm').onsubmit = function (e) {
+  var form = this;
   var city = e.target.querySelector('input[name=city]').value;
   var region = e.target.querySelector('input[name=region]').value;
   var country_name = e.target.querySelector('input[name=country_name]').value;
@@ -80,6 +81,15 @@ document.getElementById('mapGeneratorForm').onsubmit = function (e) {
   img.onload = function () {
     document.getElementById('generatedImage').innerHTML = '';
     document.getElementById('generatedImage').appendChild(img);
+    var user_id = form.dataset.userid;
+    if (user_id) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/user/' + user_id + '/history');
+      xhr.onload = function () {
+        console.log('Updated user history');
+      };
+      xhr.send();
+    }
   };
 
   var loading_font_size = '64px';
