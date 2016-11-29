@@ -20,6 +20,7 @@ import psycopg2
 import os
 import requests
 import sqlite3
+import urlparse
 import urllib
 
 from anytownlib.map_cache import fetch_from_map_cache
@@ -65,6 +66,14 @@ def get_db():
                 db = g._database = sqlite3.connect(app.config['DATABASE'])
                 db.row_factory = sqlite3.Row
                 db.execute('PRAGMA foreign_keys = ON')
+            elif app.config['PRODUCTION']:
+                components = urlparse.urlparse(os.environ['DATABASE_URL'])
+                db = g._database = psycopg2.connect(
+                    database=components.path[1:],
+                    user=components.username,
+                    password=components.password,
+                    host=components.hostname
+                )
             else:
                 db = g._database = psycopg2.connect(
                     'dbname={0} user={1} password={2}'.format(
