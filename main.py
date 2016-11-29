@@ -297,4 +297,5 @@ if __name__ == '__main__':
         # Use facebook client ecret as app secret key
         app.secret_key = get_facebook_client_id_and_secret(
             app.config['PRODUCTION'])[1]
+        print 'secret key:', app.secret_key
     app.run(port=5000)
