@@ -22,6 +22,7 @@ function initAutocomplete() {
 function fillInCity() {
   // Get the place details from the autocomplete object.
   var place = autocomplete.getPlace();
+  document.getElementById('place_id').value = place.place_id;
 
   for (var component in componentForm) {
     document.getElementById(component).value = '';
@@ -91,7 +92,8 @@ document.getElementById('mapGeneratorForm').onsubmit = function (e) {
     var user_id = form.dataset.userid;
     if (user_id) {
       var xhr = new XMLHttpRequest();
-      xhr.open('POST', '/user/' + user_id + '/history');
+      var place_id = document.getElementById('place_id').value;
+      xhr.open('POST', '/user/' + user_id + '/history?place_id=' + place_id);
       xhr.onload = function () {
         console.log('Updated user history');
       };

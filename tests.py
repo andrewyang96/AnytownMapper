@@ -70,6 +70,7 @@ class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
     def setUp(self):
         """Setup method."""
         self.db_fd, app.config['DATABASE'] = tempfile.mkstemp()
+        app.config['TESTING'] = True
         self.app = app.test_client()
         with app.app_context():
             init_db()
@@ -119,86 +120,104 @@ class TestAnytownLibMapCacheAndUserProfiles(unittest.TestCase):
         with app.app_context():
             # START map_cache testing
             self.assertIsNone(
-                fetch_from_map_cache(get_db(), self.place1['place_id']))
+                fetch_from_map_cache(get_db(), self.place1['place_id'],
+                                     test=True))
             self.assertIsNone(
-                fetch_from_map_cache(get_db(), self.place2['place_id']))
+                fetch_from_map_cache(get_db(), self.place2['place_id'],
+                                     test=True))
 
-            insert_into_map_cache(get_db(), **self.place1)
-            place1 = fetch_from_map_cache(get_db(), self.place1['place_id'])
+            insert_into_map_cache(get_db(), test=True, **self.place1)
+            place1 = fetch_from_map_cache(get_db(), self.place1['place_id'],
+                                          test=True)
             self.assertIsNotNone(place1)
             self.assertEquals(place1['city'], self.place1['city'])
             self.assertEquals(place1['region'], self.place1['region'])
             self.assertIsNone(
-                fetch_from_map_cache(get_db(), self.place2['place_id']))
+                fetch_from_map_cache(get_db(), self.place2['place_id'],
+                                     test=True))
 
-            insert_into_map_cache(get_db(), **self.place2)
+            insert_into_map_cache(get_db(), test=True, **self.place2)
             self.assertIsNotNone(
-                fetch_from_map_cache(get_db(), self.place1['place_id']))
-            place2 = fetch_from_map_cache(get_db(), self.place2['place_id'])
+                fetch_from_map_cache(get_db(), self.place1['place_id'],
+                                     test=True))
+            place2 = fetch_from_map_cache(get_db(), self.place2['place_id'],
+                                          test=True)
             self.assertIsNotNone(place2)
             self.assertEquals(place2['city'], self.place2['city'])
             self.assertEquals(place2['region'], self.place2['region'])
 
             self.place1['city'] = self.place1_updated_city
             self.place1['region'] = self.place1_updated_region
-            update_map_cache(get_db(), **self.place1)
-            place1 = fetch_from_map_cache(get_db(), self.place1['place_id'])
+            update_map_cache(get_db(), test=True, **self.place1)
+            place1 = fetch_from_map_cache(get_db(), self.place1['place_id'],
+                                          test=True)
             self.assertIsNotNone(place1)
             self.assertEquals(place1['city'], self.place1_updated_city)
             self.assertEquals(place1['region'], self.place1_updated_region)
             self.assertIsNotNone(
-                fetch_from_map_cache(get_db(), self.place2['place_id']))
+                fetch_from_map_cache(get_db(), self.place2['place_id'],
+                                     test=True))
 
             self.assertRaises(
                 sqlite3.IntegrityError,
-                lambda: insert_into_map_cache(get_db(), **self.place2))
+                lambda: insert_into_map_cache(
+                    get_db(), test=True, **self.place2))
 
             # START user_profile testing
-            self.assertIsNone(get_user_info(get_db(), self.user1['user_id']))
-            self.assertIsNone(get_user_info(get_db(), self.user2['user_id']))
+            self.assertIsNone(get_user_info(get_db(), self.user1['user_id'],
+                                            test=True))
+            self.assertIsNone(get_user_info(get_db(), self.user2['user_id'],
+                                            test=True))
 
-            update_user(get_db(), **self.user1)
-            self.assertIsNotNone(get_user_info(get_db(), '1'))
-            self.assertIsNone(get_user_info(get_db(), '2'))
+            update_user(get_db(), test=True, **self.user1)
+            self.assertIsNotNone(get_user_info(get_db(), '1', test=True))
+            self.assertIsNone(get_user_info(get_db(), '2', test=True))
 
             update_user_location_history(
-                get_db(), self.user1['user_id'], self.place1['place_id'])
+                get_db(), self.user1['user_id'], self.place1['place_id'],
+                test=True)
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
-                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))
+                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST',
+                    test=True))
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
-                    get_db(), self.user2['user_id'], self.place1['place_id']))
+                    get_db(), self.user2['user_id'], self.place1['place_id'],
+                    test=True))
 
             self.assertEquals(
                 len(get_user_location_history(
-                    get_db(), self.user1['user_id'], 0)), 1)
+                    get_db(), self.user1['user_id'], 0, test=True)), 1)
 
-            update_user(get_db(), **self.user2)
-            self.assertIsNotNone(get_user_info(get_db(), '1'))
-            self.assertIsNotNone(get_user_info(get_db(), '2'))
+            update_user(get_db(), test=True, **self.user2)
+            self.assertIsNotNone(get_user_info(get_db(), '1', test=True))
+            self.assertIsNotNone(get_user_info(get_db(), '2', test=True))
 
             update_user_location_history(
-                get_db(), self.user1['user_id'], self.place2['place_id'])
+                get_db(), self.user1['user_id'], self.place2['place_id'],
+                test=True)
             update_user_location_history(
-                get_db(), self.user2['user_id'], self.place2['place_id'])
+                get_db(), self.user2['user_id'], self.place2['place_id'],
+                test=True)
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
-                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST'))
+                    get_db(), self.user1['user_id'], 'THIS DOESNT EXIST',
+                    test=True))
             self.assertRaises(
                 sqlite3.IntegrityError,
                 lambda: update_user_location_history(
-                    get_db(), self.user2['user_id'], 'THIS DOESNT EXIST'))
+                    get_db(), self.user2['user_id'], 'THIS DOESNT EXIST',
+                    test=True))
 
             self.assertEquals(
                 len(get_user_location_history(
-                    get_db(), self.user1['user_id'], 0)), 2)
+                    get_db(), self.user1['user_id'], 0, test=True)), 2)
             self.assertEquals(
                 len(get_user_location_history(
-                    get_db(), self.user2['user_id'], 0)), 1)
+                    get_db(), self.user2['user_id'], 0, test=True)), 1)
 
 
 class TestAnytownLibMapmaker(unittest.TestCase):

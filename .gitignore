@@ -89,3 +89,4 @@ ENV/
 .ropeproject
 
 database.db
+postgres_credentials.txt

@@ -13,6 +13,7 @@ from flask import url_for
 
 import cStringIO
 import facebook
+import psycopg2
 import os
 import requests
 import sqlite3
@@ -29,9 +30,12 @@ from anytownlib.user_profiles import update_user
 from anytownlib.user_profiles import update_user_location_history
 
 app = Flask(__name__)
-app.config['DATABASE'] = 'database.db'
+app.config['DATABASE'] = 'anytown-mapper'
 app.config['PRODUCTION'] = (True if os.environ.get('HEROKU_PROD', None)
                             else False)
+with open('postgres_credentials.txt', 'r') as f:
+    app.config['USER'] = f.readline()
+    app.config['PASSWORD'] = f.readline()
 
 
 def init_db():
@@ -43,48 +47,79 @@ def init_db():
 
 
 def get_db():
-    """Get database object."""
+    """Get database connection object in testing or dev/prod environments."""
     db = getattr(g, '_database', None)
     if db is None:
-        db = g._database = sqlite3.connect(app.config['DATABASE'])
-        db.row_factory = sqlite3.Row
-        db.execute('PRAGMA foreign_keys = ON')
+        with app.app_context():
+            if app.config.get('TESTING'):
+                db = g._database = sqlite3.connect(app.config['DATABASE'])
+                db.row_factory = sqlite3.Row
+                db.execute('PRAGMA foreign_keys = ON')
+            else:
+                db = g._database = psycopg2.connect(
+                    'dbname={0} user={1} password={2}'.format(
+                        app.config['DATABASE'], app.config['USER'],
+                        app.config['PASSWORD']))
     return db
 
 
-def get_google_maps_api_key(prod):
+def get_google_maps_api_key(prod, test=False):
     """Get Google Maps API key."""
     if prod:
         return os.environ.get('GOOGLE_API_KEY', None)
     cur = get_db().cursor()
-    api_key = cur.execute(
-        'SELECT api_key FROM credentials WHERE provider="google"').fetchone()
+    api_key = None
+    if test:
+        api_key = cur.execute(
+            'SELECT api_key FROM credentials WHERE provider="google"'
+        ).fetchone()
+    else:
+        cur.execute("SELECT api_key FROM credentials WHERE provider='google'")
+        api_key = cur.fetchone()
     return api_key[0]
 
 
-def get_facebook_client_id_and_secret(prod):
+def get_facebook_client_id_and_secret(prod, test=False):
     """Get Facebook client ID and client secret."""
+    if test:
+        cur = get_db().cursor()
+        stmt = 'SELECT api_key FROM credentials WHERE provider=?'
+        client_id = cur.execute(stmt, ('facebook_client_id', )).fetchone()[0]
+        client_secret = cur.execute(
+            stmt, ('facebook_client_secret', )).fetchone()[0]
+        return client_id, client_secret
     if prod:
         return (os.environ.get('FB_CLIENT_ID', None),
                 os.environ.get('FB_CLIENT_SECRET', None))
+
     cur = get_db().cursor()
-    stmt = 'SELECT api_key FROM credentials WHERE provider=?'
-    client_id = cur.execute(stmt, ('facebook_client_id', )).fetchone()[0]
-    client_secret = cur.execute(
-        stmt, ('facebook_client_secret', )).fetchone()[0]
+    stmt = "SELECT api_key FROM credentials WHERE provider=%s"
+    cur.execute(stmt, ('facebook_client_id', ))
+    client_id = cur.fetchone()[0]
+    cur.execute(stmt, ('facebook_client_secret', ))
+    client_secret = cur.fetchone()[0]
     return client_id, client_secret
 
 
-def get_aws_client_id_and_secret(prod):
+def get_aws_client_id_and_secret(prod, test=False):
     """Get AWS client ID and client secret."""
+    if test:
+        cur = get_db().cursor()
+        stmt = 'SELECT api_key FROM credentials WHERE provider=?'
+        client_id = cur.execute(stmt, ('aws_client_id', )).fetchone()[0]
+        client_secret = cur.execute(
+            stmt, ('aws_client_secret', )).fetchone()[0]
+        return client_id, client_secret
     if prod:
         return (os.environ.get('AWS_CLIENT_ID', None),
                 os.environ.get('AWS_CLIENT_SECRET', None))
+
     cur = get_db().cursor()
-    stmt = 'SELECT api_key FROM credentials WHERE provider=?'
-    client_id = cur.execute(stmt, ('aws_client_id', )).fetchone()[0]
-    client_secret = cur.execute(
-        stmt, ('aws_client_secret', )).fetchone()[0]
+    stmt = "SELECT api_key FROM credentials WHERE provider=%s"
+    cur.execute(stmt, ('aws_client_id', ))
+    client_id = cur.fetchone()[0]
+    cur.execute(stmt, ('aws_client_secret', ))
+    client_secret = cur.fetchone()[0]
     return client_id, client_secret
 
 
