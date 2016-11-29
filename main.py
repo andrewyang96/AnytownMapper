@@ -38,9 +38,11 @@ app.config['DATABASE'] = 'anytown-mapper'
 app.config['PRODUCTION'] = (True if os.environ.get('HEROKU_PROD', None)
                             else False)
 if app.config['PRODUCTION']:
+    print 'App in production environment'
     app.config['USER'] = None
     app.config['PASSWORD'] = None
 else:
+    print 'App in development environment'
     with open('postgres_credentials.txt', 'r') as f:
         app.config['USER'] = f.readline()
         app.config['PASSWORD'] = f.readline()
