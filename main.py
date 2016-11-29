@@ -37,9 +37,13 @@ app = Flask(__name__)
 app.config['DATABASE'] = 'anytown-mapper'
 app.config['PRODUCTION'] = (True if os.environ.get('HEROKU_PROD', None)
                             else False)
-with open('postgres_credentials.txt', 'r') as f:
-    app.config['USER'] = f.readline()
-    app.config['PASSWORD'] = f.readline()
+if app.config['PRODUCTION']:
+    app.config['USER'] = None
+    app.config['PASSWORD'] = None
+else:
+    with open('postgres_credentials.txt', 'r') as f:
+        app.config['USER'] = f.readline()
+        app.config['PASSWORD'] = f.readline()
 
 
 def init_db():
