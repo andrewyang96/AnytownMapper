@@ -80,6 +80,23 @@ def get_user_location_history(db, user_id, since_timestamp, test=False):
     return map(lambda entry: dict(zip(column_names, entry)), location_history)
 
 
+def get_formatted_user_location_history(db, user_id, since_timestamp):
+    """Get JSON-formatted array of location history objects after since_timestamp.
+
+    Not suitable to SQLite3 test envs.
+    """
+    user_id = int(user_id)
+    cur = db.cursor()
+    cur.execute(
+        """SELECT * FROM location_history INNER JOIN map_cache
+        ON location_history.place_id=map_cache.place_id AND
+        location_history.user_id=%s AND location_history.timestamp>=%s""",
+        (user_id, since_timestamp))
+    location_history = cur.fetchall()
+    column_names = tuple(description[0] for description in cur.description)
+    return map(lambda entry: dict(zip(column_names, entry)), location_history)
+
+
 def update_user_location_history(db, user_id, place_id, test=False):
     """Insert new location history entry for a given user."""
     user_id = int(user_id)

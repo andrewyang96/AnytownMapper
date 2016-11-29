@@ -1,0 +1,13 @@
+#locationHistoryMap {
+    height: 80vh;
+    width: 80vw;
+    z-index: 0;
+}
+
+#locationHistoryMap h1 {
+    font-size: 24px;
+}
+
+#locationHistoryMap p {
+    font-size: 10px;
+}

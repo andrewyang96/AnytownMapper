@@ -1,8 +1,11 @@
 """Entrypoint for Anytown Mapper web application."""
 
+from datetime import datetime
+
 from flask import flash
 from flask import Flask
 from flask import g
+from flask import jsonify
 from flask import make_response
 from flask import render_template
 from flask import request
@@ -25,6 +28,7 @@ from anytownlib.map_cache import insert_into_map_cache
 from anytownlib.map_cache import upload_map_to_s3
 from anytownlib.mapmaker import make_image
 from anytownlib.maps import geocode_coords
+from anytownlib.user_profiles import get_formatted_user_location_history
 from anytownlib.user_profiles import get_user_info
 from anytownlib.user_profiles import update_user
 from anytownlib.user_profiles import update_user_location_history
@@ -141,10 +145,23 @@ def user_profile(user_id):
     user_profile = get_user_info(get_db(), user_id)
     if user_profile is None:
         return 'User does not exist', 404
+    name = session.get('name')
     return render_template(
         'profile.html',
         stylesheet_href=url_for('static', filename='style.css'),
-        user_profile=user_profile)
+        script_src=url_for('static', filename='user_profile.js'),
+        api_key=get_google_maps_api_key(app.config['PRODUCTION']),
+        name=name, user_id=user_id, user_profile=user_profile)
+
+
+@app.route('/user/<int:user_id>/history', methods=['GET'])
+def get_user_history(user_id):
+    """Get user history handler."""
+    unix_timestamp = (datetime.utcnow() - datetime(1970, 1, 1)).total_seconds()
+    since_timestamp = unix_timestamp - 604800  # hardcode to one week
+    markers = get_formatted_user_location_history(
+        get_db(), user_id, since_timestamp)
+    return jsonify({'results': markers})
 
 
 @app.route('/user/<int:user_id>/history', methods=['POST'])

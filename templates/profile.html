@@ -7,10 +7,14 @@
 
     {% include 'header.html' %}
 
-    <h1>{{ user_profile['name'] }}</h1>
+    <div class="container">
+      <h1>{{ user_profile['name'] }}</h1>
+      <p>Email: {{ user_profile['email'] }}</p>
+      <div id="locationHistoryMap"></div>
+    </div>
 
-    <p>Email: {{ user_profile['email'] }}</p>
-
+    <script src="{{ script_src }}"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"></script>
     {% include 'javascripts.html' %}
   </body>
 </html>
