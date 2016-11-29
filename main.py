@@ -42,6 +42,7 @@ if app.config['PRODUCTION']:
     print 'App in production environment'
     app.config['USER'] = None
     app.config['PASSWORD'] = None
+    app.secret_key = os.environ.get('FB_CLIENT_SECRET')
 else:
     print 'App in development environment'
     with open('postgres_credentials.txt', 'r') as f:
@@ -293,11 +294,4 @@ def logout():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        # Use facebook client secret as app secret key
-        if app.config['PRODUCTION']:
-            app.secret_key = os.environ.get('FB_CLIENT_SECRET')
-        else:
-            app.secret_key = get_facebook_client_id_and_secret(
-                app.config['PRODUCTION'])[1]
     app.run(port=5000)
