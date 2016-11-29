@@ -127,16 +127,17 @@ def get_map():
     city = request.args.get('city').strip() or ''
     if len(city) == 0:
         return 'city parameter is not present', 400
-    region = request.args.get('region').strip() or ''
-    if len(region) == 0:
-        return 'region parameter is not present', 400
+    # region made optional because of Singapore
+    region = request.args.get('region')
+    if region is not None:
+        region = region.strip()
     country_name = request.args.get('country_name').strip() or ''
     if len(country_name) == 0:
         return 'country_name parameter is not present', 400
     country_code = request.args.get('country_code').strip() or ''
     if len(country_code) == 0:
         return 'country_code parameter is not present', 400
-    search_query = ' '.join((city, region, country_code))
+    search_query = ' '.join(filter(None, (city, region, country_code)))
     api_key = get_google_maps_api_key(app.config['PRODUCTION'])
     coords, place_id = geocode_coords(search_query, api_key)
 

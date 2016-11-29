@@ -1,7 +1,9 @@
 var placeSearch, autocomplete;
 var componentForm = {
   locality: 'long_name',
+  colloquial_area: 'long_name',
   administrative_area_level_1: 'long_name',
+  administrative_area_level_2: 'long_name',
   country: 'long_name',
 };
 
@@ -43,7 +45,8 @@ function fillInCity() {
     }
   }
 
-  var locationIndicatorText = components.locality + ', ' + components.administrative_area_level_1 + ', ' + components.country;
+  // added or hack because of Taipei
+  var locationIndicatorText = (components.locality || components.colloquial_area) + ', ' + (components.administrative_area_level_1 || components.administrative_area_level_2) + ', ' + components.country;
   document.getElementById('locationIndicator').textContent = locationIndicatorText;
 }
 
@@ -67,15 +70,19 @@ function geolocate() {
 
 document.getElementById('mapGeneratorForm').onsubmit = function (e) {
   var form = this;
-  var city = e.target.querySelector('input[name=city]').value;
-  var region = e.target.querySelector('input[name=region]').value;
+  var city = e.target.querySelector('input[name=city1]').value || e.target.querySelector('input[name=city2]').value;
+  var region = e.target.querySelector('input[name=region1]').value || e.target.querySelector('input[name=region2]').value;
   var country_name = e.target.querySelector('input[name=country_name]').value;
   var country_code = e.target.querySelector('input[name=country_code]').value;
   if (!city || !region || !country_name || !country_code) {
     return false;
   }
 
-  var params = 'city=' + encodeURIComponent(city) + '&region=' + encodeURIComponent(region) + '&country_name=' + encodeURIComponent(country_name) + '&country_code=' + encodeURIComponent(country_code);
+  var params = 'city=' + encodeURIComponent(city) + '&country_name=' + encodeURIComponent(country_name) + '&country_code=' + encodeURIComponent(country_code);
+  if (region) {
+    // Make region optional (e.g. Singapore)
+    params += ('&region=' + encodeURIComponent(region));
+  }
   var img = document.createElement('img');
   img.src = '/map?' + params;
   img.onload = function () {

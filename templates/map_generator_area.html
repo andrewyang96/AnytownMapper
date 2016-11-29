@@ -1,7 +1,9 @@
 <form id="mapGeneratorForm" data-userid="{{ user_id or '' }}">
   <input id="citySelectorField" placeholder="Enter a city" onFocus="geolocate()" type="text" />
-  <input id="locality" type="hidden" name="city" />
-  <input id="administrative_area_level_1" type="hidden" name="region" />
+  <input id="locality" type="hidden" name="city1" />
+  <input id="colloquial_area" type="hidden" name="city2" />
+  <input id="administrative_area_level_1" type="hidden" name="region1" />
+  <input id="administrative_area_level_2" type="hidden" name="region2" />
   <input id="country" type="hidden" name="country_name" />
   <input id="country_code" type="hidden" name="country_code" />
   <input type="submit"></button>

@@ -14,7 +14,7 @@ CREATE TABLE map_cache(
     lat             REAL NOT NULL,
     lng             REAL NOT NULL,
     city            TEXT NOT NULL,
-    region          TEXT NOT NULL,
+    region          TEXT,
     country_name    TEXT NOT NULL,
     country_code    TEXT NOT NULL
 );

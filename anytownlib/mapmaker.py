@@ -38,8 +38,9 @@ def make_image(city_name, region, country_name, country_code, coords, api_key):
     im.paste(im=continent_image, box=(10, 130))
     im.paste(im=regional_image, box=(510, 130))
     draw.text((10, 10), city_name, header_color, font=header_font)
-    draw.text(
-        (10, 60), region, header_color, font=subheader_font)
+    if region:
+        draw.text(
+            (10, 60), region, header_color, font=subheader_font)
 
     coords_text = format_coords(coords)
     coords_textsize = draw.textsize(coords_text, font=subheader_font)
