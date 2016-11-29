@@ -74,7 +74,7 @@ document.getElementById('mapGeneratorForm').onsubmit = function (e) {
   var region = e.target.querySelector('input[name=region1]').value || e.target.querySelector('input[name=region2]').value;
   var country_name = e.target.querySelector('input[name=country_name]').value;
   var country_code = e.target.querySelector('input[name=country_code]').value;
-  if (!city || !region || !country_name || !country_code) {
+  if (!city || !country_name || !country_code) {
     return false;
   }
 
