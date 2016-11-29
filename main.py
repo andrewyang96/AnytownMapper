@@ -3,6 +3,7 @@
 from flask import flash
 from flask import Flask
 from flask import g
+from flask import make_response
 from flask import render_template
 from flask import request
 from flask import send_file
@@ -162,7 +163,11 @@ def get_map():
     stream = cStringIO.StringIO()
     im.save(stream, 'PNG')
     stream.seek(0)
-    return send_file(stream, mimetype='image/png')
+
+    response = make_response(send_file(stream, mimetype='image/png'))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    return response
 
 
 @app.route('/login', methods=['GET'])
