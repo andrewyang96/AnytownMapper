@@ -75,16 +75,16 @@ def get_facebook_client_id_and_secret(prod):
     return client_id, client_secret
 
 
-def get_amazon_client_id_and_secret(prod):
-    """Get Amazon client ID and client secret."""
+def get_aws_client_id_and_secret(prod):
+    """Get AWS client ID and client secret."""
     if prod:
         return (os.environ.get('AWS_CLIENT_ID', None),
                 os.environ.get('AWS_CLIENT_SECRET', None))
     cur = get_db().cursor()
     stmt = 'SELECT api_key FROM credentials WHERE provider=?'
-    client_id = cur.execute(stmt, ('amazon_client_id', )).fetchone()[0]
+    client_id = cur.execute(stmt, ('aws_client_id', )).fetchone()[0]
     client_secret = cur.execute(
-        stmt, ('amazon_client_secret', )).fetchone()[0]
+        stmt, ('aws_client_secret', )).fetchone()[0]
     return client_id, client_secret
 
 
@@ -142,7 +142,7 @@ def get_map():
     api_key = get_google_maps_api_key(app.config['PRODUCTION'])
     coords, place_id = geocode_coords(search_query, api_key)
 
-    aws_client_id, aws_client_secret = get_amazon_client_id_and_secret(
+    aws_client_id, aws_client_secret = get_aws_client_id_and_secret(
         app.config['PRODUCTION'])
 
     existing_map_cache = fetch_from_map_cache(get_db(), place_id)
